@@ -1,7 +1,8 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <ArduinoHttpClient.h>
-#include <Arduino_JSON.h>
+//#include <Arduino_JSON.h>
+#include <ArduinoJson.h>
 #include "arduino_secrets.h"
 
 ///////please enter your sensitive data in the Secret tab/arduino_secrets.h
@@ -77,38 +78,44 @@ void loop() {
           Serial.print("Received a message:");
           message = wsClient.readString();
           Serial.println(message);
-          JSONVar messageData = JSON.parse(message);
-          Serial.println(messageData);
-          String mType = JSON.stringify(messageData["type"]);
+          StaticJsonDocument<128> messageData;
+          DeserializationError err = deserializeJson(messageData, message);
+          if (err) {
+            Serial.print(F("deserializeJson() failed with code "));
+            Serial.println(err.f_str());
+          }
+//          JSONVar messageData = JSON.parse(message);
+          Serial.println(messageData["type"].as<const char*>());
+          const char* mType = messageData["type"];
           Serial.print("mType: ");
           Serial.println(mType);
 //          ?????
-          if (!mType){
-            Serial.println("try to recover string");
-            int index = message.indexOf("d_w");
-            String subMessage = message.substring(index);
-            String newMessage = "{\"payload\":{";
-            newMessage += subMessage;
-            messageData = JSON.parse(newMessage);
-            Serial.print("newMessage: ");
-            Serial.println(messageData);
-            mType = "realtime_update";
-          }
-          if (mType == "realtime_update") {
-            Serial.print("Received a realtime_update: ");
-            Serial.println(messageData);
-            int solar = messageData["payload"]["d_solar_w"];
-            int grid = messageData["payload"]["d_w"];
-            int avail = solar - grid;
-            Serial.print("solar: ");
-            Serial.println(solar);
-            Serial.print("grid: ");
-            Serial.println(grid);
-            Serial.print("avail: ");
-            Serial.println(avail);
-            Serial.println("Wait 1s for next message");
-            delay(1000);
-          }
+//          if (!mType){
+//            Serial.println("try to recover string");
+//            int index = message.indexOf("d_w");
+//            String subMessage = message.substring(index);
+//            String newMessage = "{\"payload\":{";
+//            newMessage += subMessage;
+//            messageData = JSON.parse(newMessage);
+//            Serial.print("newMessage: ");
+//            Serial.println(messageData);
+//            mType = "realtime_update";
+//          }
+//          if (mType == "realtime_update") {
+//            Serial.print("Received a realtime_update: ");
+//            Serial.println(messageData);
+//            int solar = messageData["payload"]["d_solar_w"];
+//            int grid = messageData["payload"]["d_w"];
+//            int avail = solar - grid;
+//            Serial.print("solar: ");
+//            Serial.println(solar);
+//            Serial.print("grid: ");
+//            Serial.println(grid);
+//            Serial.print("avail: ");
+//            Serial.println(avail);
+//            Serial.println("Wait 1s for next message");
+//            delay(1000);
+//          }
        }
       
        // wait 5 seconds
@@ -145,9 +152,11 @@ void authenticate() {
   Serial.println(response);
   
   if (statusCode == 200) {
-    JSONVar htmlResponse = JSON.parse(response);
-    SENSE_ACCESS_TOKEN = htmlResponse["access_token"];
-    SENSE_MONITOR_ID = JSON.stringify(htmlResponse["monitors"][0]["id"]);
+    StaticJsonDocument<192> htmlResponse;
+    DeserializationError err = deserializeJson(htmlResponse, response);
+//    JSONVar htmlResponse = JSON.parse(response);
+    SENSE_ACCESS_TOKEN = htmlResponse["access_token"].as<String>();
+    SENSE_MONITOR_ID = htmlResponse["monitors"][0]["id"].as<String>();
     constructWebSocketURL();
   }
   else {
