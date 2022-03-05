@@ -29,8 +29,8 @@ class senseController:
         currSolar = int(sense.active_solar_power)
         print(self.lastCall, self.updateInterval, time())
         if (time() > self.lastCall + self.updateInterval):
-            logging.info("ActivePower: %sW, ActiveSolar: %sW", currPower, currSolar)
             difference = currSolar - currPower
+            logging.info("Available Solar: %s, ActivePower: %sW, ActiveSolar: %sW", difference, currPower, currSolar)
             self.lastCall = time()
             if (self.charging and difference > 0):
                 logging.info("charging")
@@ -41,10 +41,12 @@ class senseController:
                 
     def startCharging(self):
         logging.info("start charging")
+        self.charging = True
         #enable pins for relay
         
     def startDischarging(self):
         logging.info("start discharging")
+        self.charging = False
         #enable pins for relay
             
         
