@@ -4,6 +4,14 @@ from time import time, gmtime, strftime
 import logging
 logging.basicConfig(filename='output.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s')
 
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BOARD)
+GPIO.setwarnings(False)
+ledPinCharge = 11
+ledPinDischarge = 12
+GPIO.setup(ledPinCharge, GPIO.OUT)
+GPIO.setup(ledPinDischarge, GPIO.OUT)
+
 sense = Senseable()
 sense.authenticate(SENSE_USER, SENSE_PASS)
 
@@ -37,18 +45,26 @@ class senseController:
             elif (difference > (self.chargeW + (self.chargeW * 0.10))):
                 self.startCharging()
             else:
-                self.startDischarging();
+                self.startDischarging()
                 
     def startCharging(self):
         logging.info("start charging")
         self.charging = True
+        self.setLED(ledPinCharge)
         #enable pins for relay
         
     def startDischarging(self):
         logging.info("start discharging")
         self.charging = False
+        self.setLED(ledPinDischarge)
         #enable pins for relay
-            
+    
+    def setLED(self, ledPin):
+        GPIO.output(ledPinDischarge, GPIO.LOW)
+        GPIO.output(ledPinCharge, GPIO.LOW)
+        GPIO.output(ledPin, GPIO.HIGH)
+
+
         
 sC = senseController()
 sense.update_realtime(sC.webSocketCallback)
