@@ -28,14 +28,10 @@ class senseController:
     def __init__(self):
         self.lastCall = time()
 
-    def webSocketCallback(self, error):
-        print("heartbeat. error: ", error)
-        if (error):
-            sense.update_realtime(sC.webSocketCallback)
-            #return
+    def webSocketCallback(self):
         currPower = int(sense.active_power)
         currSolar = int(sense.active_solar_power)
-        print(self.lastCall, self.updateInterval, time())
+        #print(self.lastCall, self.updateInterval, time())
         if (time() > self.lastCall + self.updateInterval):
             difference = currSolar - currPower
             logging.info("Available Solar: %s, ActivePower: %sW, ActiveSolar: %sW", difference, currPower, currSolar)
@@ -64,7 +60,15 @@ class senseController:
         GPIO.output(ledPinCharge, GPIO.LOW)
         GPIO.output(ledPin, GPIO.HIGH)
 
-
-        
 sC = senseController()
-sense.update_realtime(sC.webSocketCallback)
+try:
+    while True:
+        logging.info("begin update_realtime")
+        sense.update_realtime(sC.webSocketCallback)
+        logging.warning("update_realtime failed, end loop")
+except:
+    logging.exception('')
+finally:
+    logging.info("end SenseController")
+    GPIO.cleanup()
+
