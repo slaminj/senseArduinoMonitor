@@ -2,9 +2,9 @@ import sys
 sys.path.append('./sense_energy')
 from secrets import SENSE_PASS, SENSE_USER
 from sense_energy  import Senseable
-from time import time, gmtime, strftime
+from time import time, gmtime, strftime, sleep
 import logging
-logging.basicConfig(filename='output.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='output2.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 import RPi.GPIO as GPIO
 import board
@@ -88,12 +88,28 @@ class senseController:
         GPIO.output(ledPinCharge, GPIO.LOW)
         GPIO.output(ledPin, GPIO.HIGH)
 
+
+
+import datetime
+# Define the start and end times
+start_time = datetime.time(22, 0)  # 10 PM
+end_time = datetime.time(8, 0)  # 8 AM
+
 sC = senseController()
 try:
     while True:
-        logging.info("begin update_realtime")
-        sense.update_realtime(sC.webSocketCallback)
-        logging.warning("update_realtime failed, end loop")
+        current_time = datetime.datetime.now().time()
+        if current_time > end_time and current_time < start_time:
+            # print("It is after 10 PM or before 8 AM.")
+            logging.info("begin update_realtime")
+            sense.update_realtime(sC.webSocketCallback)
+            logging.warning("update_realtime failed, end loop")
+        else:
+            # print("It is not within the specified time range.")
+            lcd.clear()
+            lcd.message= "waking at 8am"
+            sC.startDischarging()
+            sleep(10)
 except:
     logging.exception('')
 finally:
@@ -101,4 +117,3 @@ finally:
     lcd.clear()
     lcd.message = "ERROR"
     GPIO.cleanup()
-
